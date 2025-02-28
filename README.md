@@ -22,8 +22,8 @@ A FastAPI-based chat assistant that provides information about restaurant menus 
 1. Clone the repository:
 
 ```bash
-git clone [your-repository-url]
-cd [repository-name]
+git clone https://github.com/warathepj/restaurant-agent.git
+cd restaurant-agent
 ```
 
 2. Create and activate a virtual environment:
@@ -44,7 +44,6 @@ pip install -r requirements.txt
 ```bash
 # Create .env file with:
 GOOGLE_API_KEY=your_api_key_here
-MONGODB_URI=your_mongodb_uri
 ```
 
 ## Usage
@@ -87,15 +86,6 @@ Response:
 
 ## Database Collections
 
-### About Collection
-
-Stores restaurant information:
-
-- Name
-- Location
-- Contact details
-- Operating hours
-
 ### Menu Collection
 
 Stores menu items:
@@ -103,8 +93,6 @@ Stores menu items:
 - Name
 - Description
 - Price
-- Category
-- Availability
 
 ## Development
 
@@ -119,19 +107,3 @@ Stores menu items:
 - API key authentication
 - Input validation
 - Rate limiting (if configured)
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## License
-
-[Your chosen license]
-
-## Contact
-
-[Your contact information]
