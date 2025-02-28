@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Database Table</title>
+    <style>
+        body {
+            background-color: #000033;
+            color: #00ffff;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        h1 {
+            text-align: center;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px #00ffff;
+            margin-bottom: 30px;
+        }
+        
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .nav a {
+            background-color: #0066ff;
+            color: #ffffff;
+            border: 2px solid #00ffff;
+            padding: 10px 20px;
+            font-family: 'Courier New', monospace;
+            text-decoration: none;
+            border-radius: 5px;
+            text-transform: uppercase;
+        }
+        
+        .nav a:hover {
+            background-color: #00ffff;
+            color: #000033;
+        }
+        
+        .collection-selector {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .collection-selector select {
+            background-color: #000044;
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        
+        .collection-selector button {
+            background-color: #0066ff;
+            color: #ffffff;
+            border: 2px solid #00ffff;
+            padding: 10px 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            text-transform: uppercase;
+        }
+        
+        .collection-selector button:hover {
+            background-color: #00ffff;
+            color: #000033;
+        }
+        
+        .data-container {
+            background-color: #000066;
+            border: 3px solid #00ffff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px #0066ff;
+            padding: 20px;
+            overflow-x: auto;
+        }
+        
+        pre {
+            background-color: #000044;
+            border: 1px solid #00ffff;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            margin: 0;
+            white-space: pre-wrap;
+        }
+
+        pre code {
+            color: #00ffff;
+        }
+
+        .json-key { color: #ff00ff; }
+        .json-string { color: #00ff00; }
+        .json-number { color: #ffff00; }
+        .json-boolean { color: #ff8000; }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th, td {
+            border: 1px solid #00ffff;
+            padding: 10px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #000088;
+            font-weight: bold;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #000055;
+        }
+        
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.03) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            pointer-events: none;
+            animation: scanline 10s linear infinite;
+        }
+        
+        @keyframes scanline {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(100vh); }
+        }
+    </style>
+</head>
+<body>
+    <div class="scanline"></div>
+    <h1>Database Collection: {{ collection }}</h1>
+    
+    <div class="nav">
+        <a href="/">← Back to Chat</a>
+        <a href="/collections">View All Collections</a>
+    </div>
+    
+    <div class="collection-selector">
+        <select id="collectionSelect">
+            {% for coll in collections %}
+                <option value="{{ coll }}" {% if coll == collection %}selected{% endif %}>{{ coll }}</option>
+            {% endfor %}
+        </select>
+        <button onclick="changeCollection()">View Collection</button>
+    </div>
+    
+    <div class="data-container">
+        <h2>Raw Data</h2>
+        <pre><code id="jsonData">{{ json_data | safe }}</code></pre>
+        
+        <h2>Table View</h2>
+        <div class="table-container">
+            <table id="dataTable">
+                {% if formatted_docs %}
+                    <tr>
+                        {% for key in formatted_docs[0].keys() %}
+                            <th>{{ key }}</th>
+                        {% endfor %}
+                    </tr>
+                    {% for doc in formatted_docs %}
+                        <tr>
+                            {% for key in formatted_docs[0].keys() %}
+                                <td>
+                                    {% if doc[key] is mapping or doc[key] is sequence and doc[key] is not string %}
+                                        {{ doc[key] | tojson }}
+                                    {% else %}
+                                        {{ doc[key] }}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        function changeCollection() {
+            const collection = document.getElementById('collectionSelect').value;
+            window.location.href = '/table?collection=' + collection;
+        }
+
+        // Add syntax highlighting for JSON
+        function syntaxHighlight(json) {
+            if (typeof json !== 'string') {
+                json = JSON.stringify(json, null, 2);
+            }
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let cls = 'json-number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'json-key';
+                    } else {
+                        cls = 'json-string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'json-boolean';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        // Apply syntax highlighting on load
+        document.addEventListener('DOMContentLoaded', function() {
+            const jsonElement = document.getElementById('jsonData');
+            const jsonContent = jsonElement.textContent;
+            try {
+                const obj = JSON.parse(jsonContent);
+                jsonElement.innerHTML = syntaxHighlight(JSON.stringify(obj, null, 2));
+            } catch (e) {
+                console.error('Error parsing JSON:', e);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>80s Style Restaurant Chat</title>
+    <style>
+        body {
+            background-color: #000033;
+            color: #00ffff;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-container {
+            flex: 1;
+            background-color: #000066;
+            border: 3px solid #00ffff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px #0066ff;
+            padding: 20px;
+            margin-bottom: 20px;
+            overflow-y: auto;
+            max-height: 70vh;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border: 2px solid #0066ff;
+            background-color: #000044;
+            border-radius: 5px;
+        }
+
+        .user-message {
+            margin-left: 20%;
+            border-color: #00ffff;
+        }
+
+        .bot-message {
+            margin-right: 20%;
+            border-color: #0066ff;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background-color: #000044;
+            border: 2px solid #00ffff;
+            color: #00ffff;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #0066ff;
+            color: #ffffff;
+            border: 2px solid #00ffff;
+            padding: 10px 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background-color: #00ffff;
+            color: #000033;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 2em;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        /* Retro scanline effect */
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.03) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            pointer-events: none;
+            animation: scanline 10s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(100vh); }
+        }
+    </style>
+</head>
+<body>
+    <div class="scanline"></div>
+    <div class="title">Restaurant Chat Assistant</div>
+    <button onclick="window.open('/table', '_blank')">Open Database in new tab</button>
+    <div class="chat-container" id="chatContainer">
+        <div class="message bot-message">Welcome to the Restaurant Assistant! How can I help you today?</div>
+    </div>
+    <div class="input-container">
+        <input type="text" id="userInput" placeholder="Type your message here..." onkeypress="handleKeyPress(event)">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+    <script>
+        const API_URL = 'http://localhost:8000';
+        
+        // Load chat history when page loads
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Load chat history from localStorage
+                const chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+                
+                // Check if the last message was a connection message
+                const hasConnectionMessage = chatHistory.some(msg => 
+                    msg.text === 'Connected to server successfully!' && msg.sender === 'bot'
+                );
+
+                chatHistory.forEach(msg => {
+                    // Skip adding old connection messages
+                    if (!(msg.text === 'Connected to server successfully!' && msg.sender === 'bot')) {
+                        addMessage(msg.text, msg.sender, false);
+                    }
+                });
+
+                // Check server connection
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                if (data.status === 'healthy' && !hasConnectionMessage) {
+                    addMessage('Connected to server successfully!', 'bot');
+                }
+            } catch (error) {
+                addMessage('Warning: Cannot connect to server', 'bot');
+                console.error('Server connection error:', error);
+            }
+        });
+    
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                addMessage(message, 'user');
+                input.value = '';
+                try {
+                    // Get last 30 messages from chat history
+                    const chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+                    const recentHistory = chatHistory.slice(-30);
+                    const contextMessage = recentHistory.map(msg => 
+                        `${msg.sender === 'user' ? 'User' : 'Assistant'}: ${msg.text}`
+                    ).join('\n');
+
+                    const response = await fetch(`${API_URL}/analyze`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            collection_name: 'menus',
+                            question: message,
+                            context: contextMessage
+                        })
+                    });
+                    const data = await response.json();
+                    addMessage(data.analysis, 'bot');
+                } catch (error) {
+                    addMessage('Sorry, there was an error processing your request', 'bot');
+                    console.error('Error:', error);
+                }
+            }
+        }
+    
+        function addMessage(text, sender, save = true) {
+            const container = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            messageDiv.textContent = text;
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+    
+            // Save to localStorage if needed
+            if (save) {
+                const chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+                chatHistory.push({ text, sender });
+                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+            }
+        }
+    
+        // Add clear history button
+        const inputContainer = document.querySelector('.input-container');
+        const clearButton = document.createElement('button');
+        clearButton.textContent = 'Clear History';
+        clearButton.onclick = () => {
+            localStorage.removeItem('chatHistory');
+            document.getElementById('chatContainer').innerHTML = '';
+            addMessage('Welcome to the Restaurant Assistant! How can I help you today?', 'bot');
+        };
+        inputContainer.appendChild(clearButton);
+    
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+    </script>
+</body>
+</html>
