@@ -1,29 +1,39 @@
 import pymongo
 from bson import ObjectId
+from datetime import datetime
 
-# Connect to MongoDB
-client = pymongo.MongoClient("mongodb://localhost:27017/")
-db = client["restaurant"]
-menus_collection = db["menus"]
 
-# Fetch all menu items
-all_menus = list(menus_collection.find())
+def fetch_formatted_data():
+    # Connect to MongoDB
+    client = pymongo.MongoClient("mongodb://localhost:27017/")
+    db = client["telegram-secretary-bot"]
+    data_collection = db["data"]
 
-# Print menu items
-for menu in all_menus:
-    print(f"Name (TH): {menu['name']}")
-    print(f"Name (EN): {menu['nameE']}")
-    print(f"Price: {menu['price']} THB")
-    print(f"Recommended: {menu['recommend']}")
-    print("-" * 50)
+    try:
+        # Fetch all data
+        all_data = list(data_collection.find())
 
-# Example: Fetch a specific menu item by ID
-specific_menu = menus_collection.find_one({"_id": ObjectId("67c02879375bf91ada24feea")})
-if specific_menu:
-    print("\nSpecific menu item:")
-    print(f"Name (TH): {specific_menu['name']}")
-    print(f"Name (EN): {specific_menu['nameE']}")
-    print(f"Price: {specific_menu['price']} THB")
+        # Format the data
+        formatted_data = []
+        for item in all_data:
+            formatted_item = {}
+            for key, value in item.items():
+                if isinstance(value, ObjectId):
+                    formatted_item[key] = str(value)
+                elif isinstance(value, datetime):
+                    formatted_item[key] = value.isoformat()
+                else:
+                    formatted_item[key] = value
+            formatted_data.append(formatted_item)
 
-# Close the connection
-client.close()
+        return formatted_data
+    finally:
+        client.close()
+
+
+if __name__ == "__main__":
+    data = fetch_formatted_data()
+    for item in data:
+        print(f"Description: {item.get('description')}")
+        print(f"Type: {item.get('type')}")
+        print("-" * 50)

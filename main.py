@@ -1,18 +1,16 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 import logging
 import traceback
-import json
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
-import os
 from bson import ObjectId
 from datetime import datetime
-
-from llm import MongoDBLLMAnalyzer
+from pymongo import MongoClient
+from typing import Dict, Any
 
 # Configure logging
 logging.basicConfig(
@@ -31,16 +29,6 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Setup templates
 templates = Jinja2Templates(directory=".")
-
-# Initialize the LLM analyzer
-try:
-    analyzer = MongoDBLLMAnalyzer(
-        connection_string="mongodb://localhost:27017/", db_name="restaurant"
-    )
-    logging.info("MongoDB LLM Analyzer initialized successfully")
-except Exception as e:
-    logging.error(f"Failed to initialize MongoDB LLM Analyzer: {str(e)}")
-    raise
 
 # Configure CORS
 app.add_middleware(
@@ -62,14 +50,7 @@ async def favicon():
 
         img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
         img.save(favicon_path, "ICO")
-
     return FileResponse(favicon_path)
-
-
-class AnalysisRequest(BaseModel):
-    collection_name: str
-    question: str
-    context: str = ""  # Optional chat history context
 
 
 @app.exception_handler(Exception)
@@ -91,7 +72,10 @@ async def root():
 @app.get("/health")
 async def health_check():
     try:
-        collections = analyzer.db.list_collection_names()
+        client = MongoClient("mongodb://localhost:27017/")
+        db = client["telegram-secretary-bot"]
+        collections = db.list_collection_names()
+        client.close()
         return {"status": "healthy", "collections": collections}
     except Exception as e:
         logging.error(f"Health check failed: {str(e)}")
@@ -100,93 +84,17 @@ async def health_check():
         )
 
 
-@app.post("/analyze")
-async def analyze_data(request: AnalysisRequest):
+@app.get("/telegram-data")
+async def get_telegram_data() -> Dict[str, Any]:
+    client = None
     try:
-        logging.info(
-            f"Received analysis request for collection '{request.collection_name}', question: '{request.question}'"
-        )
-        logging.info(f"Context length: {len(request.context.split(chr(10)))} messages")
+        # Create a new client connection to telegram-secretary-bot database
+        client = MongoClient("mongodb://localhost:27017/")
+        db = client["telegram-secretary-bot"]
+        collection = db["data"]
 
-        # Determine which collection to query based on the question
-        collection_name = request.collection_name
-        question = request.question.lower()
-
-        # If the question is about restaurant info, history, etc. and not specifically about food
-        if any(
-            keyword in question
-            for keyword in [
-                "restaurant",
-                "history",
-                "about",
-                "founded",
-                "owner",
-                "awards",
-            ]
-        ):
-            # Check if the "about" collection exists and has data
-            about_info = analyzer.get_collection_info("about")
-            if about_info["exists"] and about_info["document_count"] > 0:
-                collection_name = "about"
-                logging.info(
-                    f"Switching to 'about' collection based on question content"
-                )
-
-        collection_info = analyzer.get_collection_info(collection_name)
-        if not collection_info["exists"]:
-            return {
-                "analysis": f"Sorry, I don't have information about '{collection_name}'"
-            }
-
-        if collection_info["document_count"] == 0:
-            return {"analysis": f"The '{collection_name}' collection is empty."}
-
-        response = analyzer.analyze_collection_with_llm(
-            collection_name=collection_name,
-            question=request.question,
-            context=request.context,
-        )
-
-        logging.info(
-            f"Successfully generated analysis response from {collection_name} collection"
-        )
-        return {"analysis": response}
-    except Exception as e:
-        error_msg = f"Error analyzing data: {str(e)}"
-        logging.error(error_msg)
-        logging.error(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=error_msg)
-
-
-@app.get("/collections")
-async def list_collections():
-    try:
-        collections = analyzer.db.list_collection_names()
-        return {"collections": collections}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/collection/{collection_name}")
-async def get_collection_info(collection_name: str):
-    try:
-        info = analyzer.get_collection_info(collection_name)
-        return info
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/table")
-async def get_table_info(
-    request: Request, collection: str = "tables"
-):  # Fixed parameter order
-    try:
-        # Get all collection names
-        collections = analyzer.db.list_collection_names()
-
-        # Get the specified collection
-        collection_data = analyzer.db[collection]
-        docs = list(collection_data.find())  # Get all documents
+        # Fetch all documents
+        docs = list(collection.find())
 
         # Convert ObjectId to string and format dates
         formatted_docs = []
@@ -201,22 +109,20 @@ async def get_table_info(
                     formatted_doc[key] = value
             formatted_docs.append(formatted_doc)
 
-        # Format the raw data with proper indentation
-        json_data = json.dumps(formatted_docs, indent=2, ensure_ascii=False)
-
-        # Return template response with context
-        return templates.TemplateResponse(
-            "table.html",
-            {
-                "request": request,  # Required by FastAPI
-                "collection": collection,
-                "collections": collections,
-                "json_data": json_data,
-                "formatted_docs": formatted_docs,
-            },
-        )
+        return {
+            "status": "success",
+            "count": len(formatted_docs),
+            "data": formatted_docs,
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.error(f"Error fetching telegram data: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch data from telegram-secretary-bot: {str(e)}",
+        )
+    finally:
+        if client:
+            client.close()
 
 
 @app.on_event("shutdown")

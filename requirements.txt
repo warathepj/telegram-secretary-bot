@@ -1,3 +1,4 @@
+fastapi
 pymongo 
 google-generativeai 
 pandas 
@@ -7,3 +8,4 @@ seaborn
 Pillow
 uvicorn
 jinja2
+python-telegram-bot
