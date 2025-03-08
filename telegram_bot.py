@@ -244,6 +244,46 @@ Rules:
         )
 
 
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Send a message when the command /help is issued."""
+    try:
+        chat_id = update.effective_chat.id
+        if not ALLOWED_CHAT_IDS or chat_id in ALLOWED_CHAT_IDS:
+            help_text = """🤖 Bot Commands Guide
+
+Basic Commands:
+• /start - Start the bot
+• /help - Show this help message
+• /mychatid - Get your chat ID
+
+Task Management:
+• /task [description] - Add a new task with time
+Examples:
+- /task Buy groceries at 14:30
+- /task Meeting tomorrow at 10am
+- /task Dentist appointment next monday 15:00
+
+Note Taking:
+• /note [text] - Save a quick note
+Example:
+- /note Remember to call John
+
+💡 You can also chat normally for searching your notes and tasks!"""
+
+            await update.message.reply_text(help_text)
+            logger.info(f"Help command accessed by chat ID: {chat_id}")
+        else:
+            await update.message.reply_text(
+                "Sorry, you're not authorized to use this bot."
+            )
+            logger.warning(f"Unauthorized access attempt from chat ID: {chat_id}")
+    except Exception as e:
+        logger.error(f"Error in help_command: {str(e)}")
+        await update.message.reply_text(
+            "Sorry, I encountered an error showing the help message."
+        )
+
+
 def main() -> None:
     """Start the bot."""
     try:
@@ -252,9 +292,10 @@ def main() -> None:
 
         # Add command handlers
         application.add_handler(CommandHandler("start", start_command))
+        application.add_handler(CommandHandler("help", help_command))
         application.add_handler(CommandHandler("mychatid", get_chat_id))
         application.add_handler(CommandHandler("note", note_command))
-        application.add_handler(CommandHandler("task", task_command))  # Add this line
+        application.add_handler(CommandHandler("task", task_command))
 
         # Add message handler
         application.add_handler(
