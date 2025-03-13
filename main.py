@@ -2,15 +2,25 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
-from pydantic import BaseModel
-import logging
-import traceback
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from bson import ObjectId
 from datetime import datetime
-from pymongo import MongoClient
 from typing import Dict, Any
+import json
+import logging
+import traceback
+from pymongo import MongoClient
+from fetch import fetch_formatted_data, get_all_collections, JSONEncoder
+from pydantic import BaseModel
+
+
+# Add this class for request validation
+class DataEntry(BaseModel):
+    description: str
+    type: str
+    time: str
+
 
 # Configure logging
 logging.basicConfig(
@@ -93,18 +103,19 @@ async def get_telegram_data() -> Dict[str, Any]:
         db = client["telegram-secretary-bot"]
         collection = db["data"]
 
-        # Fetch all documents
-        docs = list(collection.find())
+        # Fetch all documents and sort by time in descending order
+        docs = list(collection.find().sort("time", -1))
 
         # Convert ObjectId to string and format dates
         formatted_docs = []
         for doc in docs:
             formatted_doc = {}
             for key, value in doc.items():
-                if isinstance(value, ObjectId):
+                if key == "_id":
                     formatted_doc[key] = str(value)
                 elif isinstance(value, datetime):
-                    formatted_doc[key] = value.isoformat()
+                    # Format datetime to a more readable string
+                    formatted_doc[key] = value.strftime("%Y-%m-%d %H:%M:%S")
                 else:
                     formatted_doc[key] = value
             formatted_docs.append(formatted_doc)
@@ -116,10 +127,66 @@ async def get_telegram_data() -> Dict[str, Any]:
         }
     except Exception as e:
         logging.error(f"Error fetching telegram data: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to fetch data from telegram-secretary-bot: {str(e)}",
+        raise HTTPException(status_code=500, detail=f"Failed to fetch data: {str(e)}")
+    finally:
+        if client:
+            client.close()
+
+
+@app.get("/table")
+async def table_view(request: Request, collection: str = "data"):
+    try:
+        # Get data using the fetch module
+        formatted_docs = fetch_formatted_data(collection)
+        collections = get_all_collections()
+
+        # Convert to JSON string with custom encoder
+        json_data = json.dumps(formatted_docs, cls=JSONEncoder, indent=2)
+
+        return templates.TemplateResponse(
+            "table.html",
+            {
+                "request": request,
+                "collection": collection,
+                "collections": collections,
+                "formatted_docs": formatted_docs,
+                "json_data": json_data,
+            },
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/add-data")
+async def add_data(data: DataEntry) -> Dict[str, Any]:
+    client = None
+    try:
+        client = MongoClient("mongodb://localhost:27017/")
+        db = client["telegram-secretary-bot"]
+        collection = db["data"]
+
+        # Convert string time to datetime object
+        time_obj = datetime.fromisoformat(data.time)
+
+        # Create document to insert
+        document = {
+            "description": data.description,
+            "type": data.type,
+            "time": time_obj,
+            "created_at": datetime.utcnow(),
+        }
+
+        # Insert the document
+        result = collection.insert_one(document)
+
+        return {
+            "status": "success",
+            "message": "Data added successfully",
+            "id": str(result.inserted_id),
+        }
+    except Exception as e:
+        logging.error(f"Error adding data: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to add data: {str(e)}")
     finally:
         if client:
             client.close()

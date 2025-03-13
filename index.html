@@ -129,6 +129,35 @@
         </table>
     </div>
 
+    <!-- Add input form -->
+    <div class="input-form-container" style="margin: 20px 0; padding: 20px; border: 2px solid #00ffff; border-radius: 5px;">
+        <h3 style="color: #00ffff; margin-bottom: 15px;">Add New Entry</h3>
+        <form id="dataForm" style="display: flex; flex-direction: column; gap: 15px;">
+            <div>
+                <label for="description" style="color: #00ffff; display: block; margin-bottom: 5px;">Description:</label>
+                <input type="text" id="description" name="description" required 
+                    style="width: 100%; padding: 8px; background-color: #000044; border: 2px solid #00ffff; color: #00ffff; border-radius: 3px;">
+            </div>
+            <div>
+                <label for="type" style="color: #00ffff; display: block; margin-bottom: 5px;">Type:</label>
+                <select id="type" name="type" required 
+                    style="width: 100%; padding: 8px; background-color: #000044; border: 2px solid #00ffff; color: #00ffff; border-radius: 3px;">
+                    <option value="note">Note</option>
+                    <option value="task">Task</option>
+                </select>
+            </div>
+            <div>
+                <label for="time" style="color: #00ffff; display: block; margin-bottom: 5px;">Time:</label>
+                <input type="datetime-local" id="time" name="time" 
+                    style="width: 100%; padding: 8px; background-color: #000044; border: 2px solid #00ffff; color: #00ffff; border-radius: 3px;">
+            </div>
+            <button type="submit" 
+                style="background-color: #0066ff; color: #ffffff; border: 2px solid #00ffff; padding: 10px; cursor: pointer; border-radius: 5px;">
+                Add Entry
+            </button>
+        </form>
+    </div>
+
     <div class="chat-container" id="chatContainer">
         <div class="message bot-message">Welcome to the Restaurant Assistant! How can I help you today?</div>
     </div>
@@ -250,26 +279,51 @@
                     const tableBody = document.getElementById('tableBody');
                     tableBody.innerHTML = '';
                     
+                    if (result.data.length === 0) {
+                        const row = document.createElement('tr');
+                        row.innerHTML = '<td colspan="3" style="text-align: center;">No data available</td>';
+                        tableBody.appendChild(row);
+                        return;
+                    }
+                    
                     result.data.forEach(item => {
                         const row = document.createElement('tr');
                         row.innerHTML = `
-                            <td style="border: 1px solid #00ffff; padding: 8px;">${item.description || ''}</td>
-                            <td style="border: 1px solid #00ffff; padding: 8px;">${item.type || ''}</td>
-                            <td style="border: 1px solid #00ffff; padding: 8px;">${item.time || ''}</td>
+                            <td style="border: 1px solid #00ffff; padding: 8px;">${escapeHtml(item.description || '')}</td>
+                            <td style="border: 1px solid #00ffff; padding: 8px;">${escapeHtml(item.type || '')}</td>
+                            <td style="border: 1px solid #00ffff; padding: 8px;">${escapeHtml(item.time || '')}</td>
                         `;
                         tableBody.appendChild(row);
                     });
                 } else {
                     console.error('Data fetch failed:', result);
+                    const tableBody = document.getElementById('tableBody');
+                    tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: red;">Failed to load data</td></tr>';
                 }
             } catch (error) {
                 console.error('Error fetching data:', error);
+                const tableBody = document.getElementById('tableBody');
+                tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: red;">Error loading data</td></tr>';
             }
+        }
+
+        // Add this helper function for XSS prevention
+        function escapeHtml(unsafe) {
+            if (unsafe == null) return '';
+            return unsafe
+                .toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
         }
 
         // Make sure this runs when the page loads
         document.addEventListener('DOMContentLoaded', () => {
             fetchAndDisplayData();
+            // Add auto-refresh every 30 seconds
+            setInterval(fetchAndDisplayData, 30000);
         });
 
         // Add refresh button
@@ -277,6 +331,39 @@
         refreshButton.textContent = 'Refresh Data';
         refreshButton.onclick = fetchAndDisplayData;
         document.querySelector('.title').after(refreshButton);
+
+        // Handle form submission
+        document.getElementById('dataForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                description: document.getElementById('description').value,
+                type: document.getElementById('type').value,
+                time: document.getElementById('time').value
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/add-data`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    alert('Data added successfully!');
+                    document.getElementById('dataForm').reset();
+                    // Refresh the table
+                    await fetchAndDisplayData();
+                } else {
+                    alert('Failed to add data');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error adding data');
+            }
+        });
     </script>
 </body>
 </html>
