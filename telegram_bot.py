@@ -33,15 +33,22 @@ ALLOWED_CHAT_IDS = [
     int(chat_id.strip()) for chat_id in ALLOWED_CHAT_IDS if chat_id.strip()
 ]
 
-# Initialize the LLM analyzer
-try:
-    analyzer = MongoDBLLMAnalyzer(
-        connection_string="mongodb://localhost:27017/", db_name="telegram-secretary-bot"
-    )
-    logger.info("MongoDB LLM Analyzer initialized successfully")
-except Exception as e:
-    logger.error(f"Failed to initialize MongoDB LLM Analyzer: {str(e)}")
-    raise
+# Global application variable
+application = None
+analyzer = None
+
+
+def initialize_analyzer():
+    global analyzer
+    try:
+        analyzer = MongoDBLLMAnalyzer(
+            connection_string="mongodb://localhost:27017/",
+            db_name="telegram-secretary-bot",
+        )
+        logger.info("MongoDB LLM Analyzer initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize MongoDB LLM Analyzer: {str(e)}")
+        raise
 
 
 # Command handler for /start
@@ -284,12 +291,17 @@ Example:
         )
 
 
-def main() -> None:
-    """Start the bot."""
-    try:
-        # Create application
-        application = Application.builder().token(TOKEN).build()
+async def setup_bot():
+    """Setup the bot without running polling."""
+    global application
 
+    # Initialize the analyzer
+    initialize_analyzer()
+
+    # Create application
+    application = Application.builder().token(TOKEN).build()
+
+    try:
         # Add command handlers
         application.add_handler(CommandHandler("start", start_command))
         application.add_handler(CommandHandler("help", help_command))
@@ -305,19 +317,72 @@ def main() -> None:
         # Add error handler
         application.add_error_handler(error_handler)
 
-        # Start the bot
-        logger.info("Starting bot...")
-        logger.info(f"Allowed chat IDs: {ALLOWED_CHAT_IDS or 'All (no restrictions)'}")
+        # Initialize the bot without starting polling
+        await application.initialize()
+        await application.start()
 
-        # Start the bot with polling
-        application.run_polling(allowed_updates=Update.ALL_TYPES)
+        logger.info("Bot setup completed!")
+        return application
 
     except Exception as e:
-        logger.error(f"Error in main: {str(e)}")
-    finally:
-        # Close MongoDB connection when bot stops
+        logger.error(f"Error setting up bot: {str(e)}")
+        if application:
+            try:
+                await application.shutdown()
+            except Exception as e:
+                logger.error(f"Error during application.shutdown(): {e}")
+        raise
+
+
+async def start_polling():
+    """Start polling updates."""
+    global application
+    if application and application.running:
+        await application.updater.start_polling()
+        logger.info("Polling started!")
+
+
+async def shutdown_bot():
+    """Shutdown the bot."""
+    global application, analyzer
+    if application and application.running:
+        try:
+            await application.updater.stop()
+            await application.stop()
+            await application.shutdown()
+            logger.info("Bot shutdown completed")
+        except Exception as e:
+            logger.error(f"Error shutting down bot: {str(e)}")
+
+    if analyzer:
         analyzer.close_connection()
 
 
+async def main():
+    """Legacy main function for standalone operation."""
+    try:
+        # Setup the bot
+        await setup_bot()
+
+        # Start polling
+        await start_polling()
+
+        # Keep the bot running
+        while True:
+            await asyncio.sleep(1)
+
+    except KeyboardInterrupt:
+        logger.info("Bot stopped by user")
+    except Exception as e:
+        logger.error(f"Error in main: {str(e)}")
+    finally:
+        await shutdown_bot()
+
+
 if __name__ == "__main__":
-    main()
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Bot stopped by user")
+    except Exception as e:
+        logger.error(f"Fatal error: {str(e)}")

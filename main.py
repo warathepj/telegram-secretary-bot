@@ -13,6 +13,7 @@ import traceback
 from pymongo import MongoClient
 from fetch import fetch_formatted_data, get_all_collections, JSONEncoder
 from pydantic import BaseModel
+import asyncio
 
 
 # Add this class for request validation
@@ -48,6 +49,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Telegram bot initialization
+telegram_setup_task = None
+telegram_bot = None
 
 
 # Add favicon endpoint
@@ -192,9 +197,49 @@ async def add_data(data: DataEntry) -> Dict[str, Any]:
             client.close()
 
 
+@app.get("/bot/status")
+async def bot_status():
+    """Get the current status of the Telegram bot."""
+    global telegram_bot
+    if telegram_bot and hasattr(telegram_bot, "running"):
+        return {"status": "running" if telegram_bot.running else "stopped"}
+    return {"status": "not_initialized"}
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Start the Telegram bot safely when FastAPI starts up."""
+    try:
+        # Import the telegram_bot module here to avoid circular imports
+        from telegram_bot import setup_bot, start_polling
+
+        # Setup the bot first
+        bot = await setup_bot()
+
+        # Set the global variable
+        global telegram_bot
+        telegram_bot = bot
+
+        # Start polling in the background
+        asyncio.create_task(start_polling())
+
+        logging.info("Telegram bot successfully initialized and started polling")
+    except Exception as e:
+        logging.error(f"Failed to start telegram bot: {str(e)}")
+        logging.error(traceback.format_exc())
+
+
 @app.on_event("shutdown")
 async def shutdown_event():
-    analyzer.close_connection()
+    """Shutdown the Telegram bot when FastAPI shuts down."""
+    try:
+        from telegram_bot import shutdown_bot
+
+        # Shutdown the bot
+        await shutdown_bot()
+        logging.info("Telegram bot successfully shutdown")
+    except Exception as e:
+        logging.error(f"Error shutting down telegram bot: {str(e)}")
 
 
 if __name__ == "__main__":
