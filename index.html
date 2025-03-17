@@ -113,22 +113,8 @@
 <body>
     <div class="scanline"></div>
     <div class="title">Restaurant Chat Assistant</div>
-    <button onclick="window.open('/table', '_blank')">Open Database in new tab</button>
+    <!-- <button onclick="window.open('/table', '_blank')">Open Database in new tab</button> -->
     
-    <!-- Add table container -->
-    <div class="data-table-container" style="margin: 20px 0;">
-        <table id="dataTable" style="width: 100%; border-collapse: collapse;">
-            <thead>
-                <tr>
-                    <th style="border: 2px solid #00ffff; padding: 10px;">Description</th>
-                    <th style="border: 2px solid #00ffff; padding: 10px;">Type</th>
-                    <th style="border: 2px solid #00ffff; padding: 10px;">Time</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-        </table>
-    </div>
-
     <!-- Add input form -->
     <div class="input-form-container" style="margin: 20px 0; padding: 20px; border: 2px solid #00ffff; border-radius: 5px;">
         <h3 style="color: #00ffff; margin-bottom: 15px;">Add New Entry</h3>
@@ -158,13 +144,29 @@
         </form>
     </div>
 
-    <div class="chat-container" id="chatContainer">
+    <!-- Add table container -->
+    <div class="data-table-container" style="margin: 20px 0;">
+        <table id="dataTable" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="border: 2px solid #00ffff; padding: 10px;">Description</th>
+                    <th style="border: 2px solid #00ffff; padding: 10px;">Type</th>
+                    <th style="border: 2px solid #00ffff; padding: 10px;">Time</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+
+    
+
+    <!-- <div class="chat-container" id="chatContainer">
         <div class="message bot-message">Welcome to the Restaurant Assistant! How can I help you today?</div>
     </div>
     <div class="input-container">
         <input type="text" id="userInput" placeholder="Type your message here..." onkeypress="handleKeyPress(event)">
         <button onclick="sendMessage()">Send</button>
-    </div>
+    </div> -->
     <script>
         const API_URL = 'http://localhost:8000';
         
