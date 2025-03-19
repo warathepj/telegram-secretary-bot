@@ -1,32 +1,45 @@
-# Restaurant Chat Assistant
+# Telegram AI Secretary Bot
 
-A FastAPI-based chat assistant that provides information about restaurant menus and details using Google's Gemini AI model.
+A FastAPI-powered Telegram bot that acts as an AI secretary, helping you manage tasks, notes, and conversations using Google's Gemini AI model.
 
-## Features
+## 🌟 Features
 
-- 🤖 Powered by Google's Gemini AI model
-- 🌐 RESTful API using FastAPI
+- 🤖 Powered by Google's Gemini AI model for natural language understanding
+- 📱 Seamless Telegram integration
+- 📝 Task and note management
+- ⏰ Smart time parsing for tasks
 - 💬 Bilingual support (English/Thai)
-- 🍽️ Restaurant information and menu queries
-- 📝 Context-aware conversations
+- 🔍 Context-aware conversations
 - 🔒 Built-in safety settings
+- 💾 MongoDB for data persistence
+- 🎨 Retro-style web dashboard
 
-## Prerequisites
+## 🛠️ Tech Stack
+
+- **Backend**: FastAPI, Python 3.7+
+- **Database**: MongoDB
+- **AI Model**: Google Gemini
+- **Bot Framework**: python-telegram-bot
+- **Frontend**: HTML, CSS, JavaScript
+- **Documentation**: Swagger UI, ReDoc
+
+## 📋 Prerequisites
 
 - Python 3.7+
 - MongoDB
-- Google AI API key
+- Google Gemini API key
+- Telegram Bot Token
 
-## Installation
+## 🚀 Installation
 
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/warathepj/restaurant-agent.git
-cd restaurant-agent
+git clone https://github.com/warathepj/telegram-secretary-bot.git
+cd telegram-secretary-bot
 ```
 
-2. Create and activate a virtual environment:
+2. Create and activate virtual environment:
 
 ```bash
 python -m venv .venv
@@ -39,14 +52,37 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Set up environment variables:
+4. Set up environment variables in `.env`:
 
 ```bash
-# Create .env file with:
-GOOGLE_API_KEY=your_api_key_here
+GEMINI_API_KEY=your_api_key_here
+TELEGRAM_BOT_TOKEN=your_bot_token_here
+ALLOWED_CHAT_IDS=123456789,987654321
 ```
 
-## Usage
+## 🤖 Bot Commands
+
+- `/start` - Start the bot
+- `/help` - Show help message
+- `/mychatid` - Get your chat ID
+- `/task` - Add a new task with time
+- `/note` - Save a quick note
+
+### Task Examples
+
+```
+/task Buy groceries at 14:30
+/task Meeting tomorrow at 10am
+/task Dentist appointment next monday 15:00
+```
+
+### Note Example
+
+```
+/note Remember to call John
+```
+
+## 🏃‍♂️ Running the Application
 
 1. Start the server:
 
@@ -54,56 +90,43 @@ GOOGLE_API_KEY=your_api_key_here
 uvicorn main:app --reload
 ```
 
-2. Access the API documentation:
+2. Access the interfaces:
 
-- Swagger UI: http://localhost:8000/docs
+- Web Dashboard: http://localhost:8000
 - ReDoc: http://localhost:8000/redoc
 
-## API Endpoints
+## 📚 API Endpoints
 
-### Chat Endpoint
+### Telegram Data Endpoint
 
 ```http
-POST /chat
+GET /telegram-data
 ```
 
-Request body:
+### Bot Status Endpoint
 
-```json
-{
-  "question": "What's on the menu?",
-  "context": "Previous conversation context (optional)"
-}
+```http
+GET /bot/status
 ```
 
-Response:
+## 💾 Database Collections
 
-```json
-{
-  "answer": "Response from the assistant"
-}
-```
+- **data**: Stores tasks, notes, and conversation data
+- **users**: User preferences and settings
 
-## Database Collections
+## 🔒 Security Features
 
-### Menu Collection
-
-Stores menu items:
-
-- Name
-- Description
-- Price
-
-## Development
-
-- The project uses FastAPI for the web framework
-- MongoDB for data storage
-- Google's Generative AI (Gemini) for natural language processing
-- Supports both English and Thai languages
-
-## Security
-
-- Implements safety settings for content filtering
+- Authorized chat IDs only
+- Content filtering with safety settings
 - API key authentication
 - Input validation
-- Rate limiting (if configured)
+- Rate limiting capabilities
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+TODO:
+
+////////////
+//////////
