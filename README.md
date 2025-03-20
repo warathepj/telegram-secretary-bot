@@ -1,3 +1,7 @@
+# เลี้ยงกาแฟผู้พัฒนา
+
+!["Alt text"](https://warathepj.github.io/js-ai-gallery/public/image/promptpay-20.png)
+
 # Telegram AI Secretary Bot
 
 A FastAPI-powered Telegram bot that acts as an AI secretary, helping you manage tasks, notes, and conversations using Google's Gemini AI model.

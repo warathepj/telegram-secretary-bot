@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>80s Style Restaurant Chat</title>
+    <title>Telegram AI Secretary Bot</title>
     <style>
         body {
             background-color: #000033;
@@ -16,75 +16,64 @@
             flex-direction: column;
         }
 
-        .chat-container {
-            flex: 1;
+        .title {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
             background-color: #000066;
             border: 3px solid #00ffff;
             border-radius: 10px;
             box-shadow: 0 0 20px #0066ff;
+        }
+
+        th, td {
+            border: 1px solid #00ffff;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #000088;
+        }
+
+        /* Form styling */
+        form {
+            background-color: #000066;
             padding: 20px;
+            border: 3px solid #00ffff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px #0066ff;
             margin-bottom: 20px;
-            overflow-y: auto;
-            max-height: 70vh;
         }
 
-        .message {
-            margin: 10px 0;
-            padding: 10px;
-            border: 2px solid #0066ff;
-            background-color: #000044;
-            border-radius: 5px;
-        }
-
-        .user-message {
-            margin-left: 20%;
-            border-color: #00ffff;
-        }
-
-        .bot-message {
-            margin-right: 20%;
-            border-color: #0066ff;
-        }
-
-        .input-container {
-            display: flex;
-            gap: 10px;
-        }
-
-        input[type="text"] {
-            flex: 1;
+        input, select {
             background-color: #000044;
             border: 2px solid #00ffff;
             color: #00ffff;
-            padding: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            border-radius: 5px;
+            padding: 8px;
+            margin: 5px 0;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         button {
             background-color: #0066ff;
             color: #ffffff;
-            border: 2px solid #00ffff;
+            border: none;
             padding: 10px 20px;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
             cursor: pointer;
-            border-radius: 5px;
-            text-transform: uppercase;
+            margin-top: 10px;
         }
 
         button:hover {
-            background-color: #00ffff;
-            color: #000033;
-        }
-
-        .title {
-            text-align: center;
-            font-size: 2em;
-            margin-bottom: 20px;
-            text-transform: uppercase;
-            text-shadow: 0 0 10px #00ffff;
+            background-color: #0044cc;
         }
 
         /* Retro scanline effect */
@@ -112,163 +101,37 @@
 </head>
 <body>
     <div class="scanline"></div>
-    <div class="title">Restaurant Chat Assistant</div>
-    <!-- <button onclick="window.open('/table', '_blank')">Open Database in new tab</button> -->
-    
-    <!-- Add input form -->
-    <div class="input-form-container" style="margin: 20px 0; padding: 20px; border: 2px solid #00ffff; border-radius: 5px;">
-        <h3 style="color: #00ffff; margin-bottom: 15px;">Add New Entry</h3>
-        <form id="dataForm" style="display: flex; flex-direction: column; gap: 15px;">
-            <div>
-                <label for="description" style="color: #00ffff; display: block; margin-bottom: 5px;">Description:</label>
-                <input type="text" id="description" name="description" required 
-                    style="width: 100%; padding: 8px; background-color: #000044; border: 2px solid #00ffff; color: #00ffff; border-radius: 3px;">
-            </div>
-            <div>
-                <label for="type" style="color: #00ffff; display: block; margin-bottom: 5px;">Type:</label>
-                <select id="type" name="type" required 
-                    style="width: 100%; padding: 8px; background-color: #000044; border: 2px solid #00ffff; color: #00ffff; border-radius: 3px;">
-                    <option value="note">Note</option>
-                    <option value="task">Task</option>
-                </select>
-            </div>
-            <div>
-                <label for="time" style="color: #00ffff; display: block; margin-bottom: 5px;">Time:</label>
-                <input type="datetime-local" id="time" name="time" 
-                    style="width: 100%; padding: 8px; background-color: #000044; border: 2px solid #00ffff; color: #00ffff; border-radius: 3px;">
-            </div>
-            <button type="submit" 
-                style="background-color: #0066ff; color: #ffffff; border: 2px solid #00ffff; padding: 10px; cursor: pointer; border-radius: 5px;">
-                Add Entry
-            </button>
-        </form>
-    </div>
+    <div class="title">Telegram AI Secretary Bot</div>
 
-    <!-- Add table container -->
-    <div class="data-table-container" style="margin: 20px 0;">
-        <table id="dataTable" style="width: 100%; border-collapse: collapse;">
-            <thead>
-                <tr>
-                    <th style="border: 2px solid #00ffff; padding: 10px;">Description</th>
-                    <th style="border: 2px solid #00ffff; padding: 10px;">Type</th>
-                    <th style="border: 2px solid #00ffff; padding: 10px;">Time</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-        </table>
-    </div>
+    <!-- Add Data Form -->
+    <form id="dataForm">
+        <input type="text" id="description" placeholder="Description" required>
+        <select id="type" required>
+            <option value="task">Task</option>
+            <option value="note">Note</option>
+        </select>
+        <input type="datetime-local" id="time" required>
+        <button type="submit">Add Data</button>
+    </form>
 
-    
+    <!-- Data Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th>Type</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <!-- Data will be populated here -->
+        </tbody>
+    </table>
 
-    <!-- <div class="chat-container" id="chatContainer">
-        <div class="message bot-message">Welcome to the Restaurant Assistant! How can I help you today?</div>
-    </div>
-    <div class="input-container">
-        <input type="text" id="userInput" placeholder="Type your message here..." onkeypress="handleKeyPress(event)">
-        <button onclick="sendMessage()">Send</button>
-    </div> -->
     <script>
         const API_URL = 'http://localhost:8000';
-        
-        // Load chat history when page loads
-        window.addEventListener('DOMContentLoaded', async () => {
-            try {
-                // Load chat history from localStorage
-                const chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
-                
-                // Check if the last message was a connection message
-                const hasConnectionMessage = chatHistory.some(msg => 
-                    msg.text === 'Connected to server successfully!' && msg.sender === 'bot'
-                );
 
-                chatHistory.forEach(msg => {
-                    // Skip adding old connection messages
-                    if (!(msg.text === 'Connected to server successfully!' && msg.sender === 'bot')) {
-                        addMessage(msg.text, msg.sender, false);
-                    }
-                });
-
-                // Check server connection
-                const response = await fetch(`${API_URL}/health`);
-                const data = await response.json();
-                if (data.status === 'healthy' && !hasConnectionMessage) {
-                    addMessage('Connected to server successfully!', 'bot');
-                }
-            } catch (error) {
-                addMessage('Warning: Cannot connect to server', 'bot');
-                console.error('Server connection error:', error);
-            }
-        });
-    
-        async function sendMessage() {
-            const input = document.getElementById('userInput');
-            const message = input.value.trim();
-            
-            if (message) {
-                addMessage(message, 'user');
-                input.value = '';
-                try {
-                    // Get last 30 messages from chat history
-                    const chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
-                    const recentHistory = chatHistory.slice(-30);
-                    const contextMessage = recentHistory.map(msg => 
-                        `${msg.sender === 'user' ? 'User' : 'Assistant'}: ${msg.text}`
-                    ).join('\n');
-
-                    const response = await fetch(`${API_URL}/analyze`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            collection_name: 'menus',
-                            question: message,
-                            context: contextMessage
-                        })
-                    });
-                    const data = await response.json();
-                    addMessage(data.analysis, 'bot');
-                } catch (error) {
-                    addMessage('Sorry, there was an error processing your request', 'bot');
-                    console.error('Error:', error);
-                }
-            }
-        }
-    
-        function addMessage(text, sender, save = true) {
-            const container = document.getElementById('chatContainer');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}-message`;
-            messageDiv.textContent = text;
-            container.appendChild(messageDiv);
-            container.scrollTop = container.scrollHeight;
-    
-            // Save to localStorage if needed
-            if (save) {
-                const chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
-                chatHistory.push({ text, sender });
-                localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-            }
-        }
-    
-        // Add clear history button
-        const inputContainer = document.querySelector('.input-container');
-        const clearButton = document.createElement('button');
-        clearButton.textContent = 'Clear History';
-        clearButton.onclick = () => {
-            localStorage.removeItem('chatHistory');
-            document.getElementById('chatContainer').innerHTML = '';
-            addMessage('Welcome to the Restaurant Assistant! How can I help you today?', 'bot');
-        };
-        inputContainer.appendChild(clearButton);
-    
-        function handleKeyPress(event) {
-            if (event.key === 'Enter') {
-                sendMessage();
-            }
-        }
-
-        // Add this function to fetch and display data
+        // Fetch and display data function
         async function fetchAndDisplayData() {
             try {
                 const response = await fetch(`${API_URL}/telegram-data`);
@@ -277,11 +140,16 @@
                 }
                 const result = await response.json();
                 
+                const tableBody = document.getElementById('tableBody');
+                if (!tableBody) {
+                    console.error('Table body element not found');
+                    return;
+                }
+                
                 if (result.status === 'success') {
-                    const tableBody = document.getElementById('tableBody');
                     tableBody.innerHTML = '';
                     
-                    if (result.data.length === 0) {
+                    if (!result.data || result.data.length === 0) {
                         const row = document.createElement('tr');
                         row.innerHTML = '<td colspan="3" style="text-align: center;">No data available</td>';
                         tableBody.appendChild(row);
@@ -291,25 +159,26 @@
                     result.data.forEach(item => {
                         const row = document.createElement('tr');
                         row.innerHTML = `
-                            <td style="border: 1px solid #00ffff; padding: 8px;">${escapeHtml(item.description || '')}</td>
-                            <td style="border: 1px solid #00ffff; padding: 8px;">${escapeHtml(item.type || '')}</td>
-                            <td style="border: 1px solid #00ffff; padding: 8px;">${escapeHtml(item.time || '')}</td>
+                            <td>${escapeHtml(item.description || '')}</td>
+                            <td>${escapeHtml(item.type || '')}</td>
+                            <td>${escapeHtml(item.time || '')}</td>
                         `;
                         tableBody.appendChild(row);
                     });
                 } else {
                     console.error('Data fetch failed:', result);
-                    const tableBody = document.getElementById('tableBody');
                     tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: red;">Failed to load data</td></tr>';
                 }
             } catch (error) {
                 console.error('Error fetching data:', error);
                 const tableBody = document.getElementById('tableBody');
-                tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: red;">Error loading data</td></tr>';
+                if (tableBody) {
+                    tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: red;">Error loading data</td></tr>';
+                }
             }
         }
 
-        // Add this helper function for XSS prevention
+        // Helper function for XSS prevention
         function escapeHtml(unsafe) {
             if (unsafe == null) return '';
             return unsafe
@@ -320,19 +189,6 @@
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
         }
-
-        // Make sure this runs when the page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchAndDisplayData();
-            // Add auto-refresh every 30 seconds
-            setInterval(fetchAndDisplayData, 30000);
-        });
-
-        // Add refresh button
-        const refreshButton = document.createElement('button');
-        refreshButton.textContent = 'Refresh Data';
-        refreshButton.onclick = fetchAndDisplayData;
-        document.querySelector('.title').after(refreshButton);
 
         // Handle form submission
         document.getElementById('dataForm').addEventListener('submit', async (e) => {
@@ -356,7 +212,6 @@
                 if (response.ok) {
                     alert('Data added successfully!');
                     document.getElementById('dataForm').reset();
-                    // Refresh the table
                     await fetchAndDisplayData();
                 } else {
                     alert('Failed to add data');
@@ -366,6 +221,9 @@
                 alert('Error adding data');
             }
         });
+
+        // Initial data load
+        document.addEventListener('DOMContentLoaded', fetchAndDisplayData);
     </script>
 </body>
 </html>
