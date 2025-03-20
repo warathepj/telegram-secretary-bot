@@ -25,7 +25,7 @@ A FastAPI-powered Telegram bot that acts as an AI secretary, helping you manage 
 - **AI Model**: Google Gemini
 - **Bot Framework**: python-telegram-bot
 - **Frontend**: HTML, CSS, JavaScript
-- **Documentation**: Swagger UI, ReDoc
+- **Documentation**: ReDoc
 
 ## 📋 Prerequisites
 
