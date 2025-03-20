@@ -6,3 +6,7 @@ txt/
 images/
 unused/
 .qodo
+init_db.py
+llm.py
+restaurant.menus.json
+table.html
