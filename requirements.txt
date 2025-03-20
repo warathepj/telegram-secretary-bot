@@ -1,10 +1,7 @@
 fastapi
 pymongo 
 google-generativeai 
-pandas 
 python-dotenv 
-matplotlib 
-seaborn
 Pillow
 uvicorn
 jinja2
